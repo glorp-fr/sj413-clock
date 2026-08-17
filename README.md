@@ -1,4 +1,4 @@
-# Module Horloge / Inclinomètre — Suzuki Samurai SJ413
+0# Module Horloge / Inclinomètre — Suzuki Samurai SJ413
 
 Remplacement de l'horloge d'origine du tableau de bord d'un Suzuki Samurai
 SJ413 (2001) par un module numérique : heure, inclinomètre (tangage /
@@ -67,14 +67,22 @@ deux fichiers.
 
 ## Câblage
 
-| Signal | Broche ESP32-S3 (à adapter) | Notes |
-| :--- | :--- | :--- |
-| Bouton MODE | GPIO 0 | `INPUT_PULLUP`, l'autre patte du bouton sur GND |
-| Bouton SET | GPIO 14 | `INPUT_PULLUP`, l'autre patte du bouton sur GND |
-| DS18B20 (1-Wire) | GPIO 17 | + résistance de tirage 4.7kΩ vers 3.3V si non intégrée au module |
-| MPU-6050 (I2C) | SDA / SCL par défaut de la carte | Bus partagé avec le RTC |
-| RTC DS3231 (I2C) | SDA / SCL par défaut de la carte | Bus partagé avec le MPU-6050 |
-| Alimentation | 5V / GND (sortie du buck 12V→5V) | Fusible 1A + diode anti-inversion en amont |
+
+
+![wiring](https://github.com/glorp-fr/sj413-clock/blob/main/wiring.jpeg)
+
+
+Convention de lecture : un point noir = connexion réelle, un simple croisement de fils sans point = pas de contact (convention standard en électronique).
+
+Points à retenir pour le câblage réel :
+
+Masse commune obligatoire : la masse du convertisseur, celle de l'ESP32, des trois capteurs et des deux boutons doivent toutes être reliées entre elles. C'est le fil le plus souvent oublié et la cause n°1 de capteurs I2C qui « ne répondent pas ».
+Bus I2C : SDA et SCL sont partagés en parallèle entre le MPU-6050 et le DS3231 — les deux modules ont des adresses I2C différentes (0x68 et 0x57/0x68 pour le DS3231 selon la carte), donc pas de conflit. La plupart des modules breakout intègrent déjà leurs résistances de tirage I2C.
+DS18B20 : la résistance 4,7 kΩ entre la ligne de données et le 3V3 est indispensable si votre sonde n'a pas déjà un module avec la résistance intégrée. Le fil de la sonde étant long (1,5–2 m jusqu'au pare-chocs), placez cette résistance côté ESP32, pas côté sonde.
+Boutons : une patte au GPIO, l'autre à la masse. Pas de résistance externe nécessaire — le INPUT_PULLUP du code active le tirage interne de l'ESP32.
+Sens de la diode : la bague de la 1N4007 doit être orientée vers le convertisseur (côté cathode = sortie), sinon rien ne s'allume.
+
+Une précision utile : alimentez l'ensemble par le +12V après contact (pas le +12V permanent), sinon le module tournera en permanence et videra la batterie du Samurai en quelques jours. Le DS3231 garde l'heure grâce à sa pile CR2032, donc couper l'alimentation ne pose aucun problème.
 
 Les broches I2C par défaut (SDA/SCL déjà câblées en interne pour l'écran)
 dépendent du modèle exact de carte ESP32-S3+écran — vérifiez la documentation
