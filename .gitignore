@@ -1,0 +1,3 @@
+*.stl
+build/
+.DS_Store
